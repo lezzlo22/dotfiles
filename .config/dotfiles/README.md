@@ -52,3 +52,47 @@ dotfiles config status.showUntrackedFiles no
 
 - **SDDM XAUTHORITY:** SDDM sets `XAUTHORITY` to `/tmp/xauth_*`, not `~/.Xauthority`.
   Scripts must read `$XAUTHORITY`, never hardcode `~/.Xauthority`.
+
+## NVIDIA (GTX 1050 Ti) — driver & the decisions it forced
+
+The GPU is Pascal, and a lot of config exists to work around NVIDIA on X11.
+
+- **Driver = `nvidia-580xx-dkms` (580.178.04), not mainline `nvidia`.** The 590 driver
+  series dropped Maxwell/Pascal/Volta, so a Pascal card like the 1050 Ti is stuck on
+  the **580 legacy branch**, packaged in the AUR as `nvidia-580xx-*`. DKMS so the module
+  rebuilds on each kernel bump (we run mainline `linux`). Companion: `nvidia-580xx-utils`
+  + `lib32-nvidia-580xx-utils`, and `egl-gbm` / `egl-wayland` / `egl-x11`.
+
+- **Picom backend = `glx` + `vsync = true`.** This is how screen tearing is handled on
+  NVIDIA — we do *not* set `ForceFullCompositionPipeline` in an xorg.conf (the usual
+  alternative). `blur-method = "none"` and effects are kept minimal; the 1050 Ti + legacy
+  driver doesn't love heavy GLX compositing.
+  - History: picom previously ran the **`xrender`** backend because kitty's GPU/OpenGL
+    rendering fought picom's GLX backend and spiked GPU memory. Once the terminal moved
+    off kitty (below), GLX became usable again and we switched back for better vsync.
+
+- **Terminal = alacritty, kitty removed.** Two reasons stacked up:
+  1. **fcitx5/Mozc input race** — the `$mod+Return` bind launches alacritty with
+     `XMODIFIERS= GTK_IM_MODULE= QT_IM_MODULE=` unset to dodge a new-window input-loss
+     race with fcitx5 (this is the reason annotated in the i3 config).
+  2. **NVIDIA/kitty GPU-memory issue** — kitty's OpenGL rendering vs. picom-GLX spikes
+     (the same clash noted above).
+  kitty is no longer installed.
+
+- **No explicit KMS modeset.** There's no `nvidia-drm.modeset=1` on the kernel cmdline and
+  no `modprobe.d` drop-in — modesetting rides the driver default. (Note this if Wayland or
+  early-KMS ever matters.)
+
+## Key packages
+
+| Role | Package | Role | Package |
+|------|---------|------|---------|
+| WM | `i3-wm` | Compositor | `picom` |
+| Bar | `i3blocks`, `i3status` | Terminal | `alacritty` |
+| Launcher | `rofi` | Notifications | `dunst` |
+| Lock screen | `i3lock-color` | Idle daemon | `xidlehook` |
+| Tray bridge | `snixembed` | Display config | `autorandr` |
+| Theming | pywal (`wal`) | Input method | `fcitx5` + `fcitx5-mozc` |
+| Key remap | `kanata` | Bluetooth | `blueman` |
+| Wi-Fi | `iwd` | Login | `sddm` |
+| X server | `xorg-server` | GPU driver | `nvidia-580xx-dkms` (+ `-utils`) |
