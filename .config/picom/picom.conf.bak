@@ -1,0 +1,6 @@
+backend = "glx";
+vsync = true;
+fading = true;
+blur-method = "none";
+
+opacity-rule = [];

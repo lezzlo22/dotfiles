@@ -1,0 +1,26 @@
+[global]
+    frame_color = "#73A3B8"
+    separator_color = auto
+    dmenu = /usr/bin/rofi -dmenu -p "Action"
+    mouse_left_click = do_action, close_notification
+    mouse_right_click = context
+    mouse_middle_click = close_notification
+    icon_path = /usr/share/icons/Papirus/16x16/devices:/usr/share/icons/Papirus/16x16/status:/usr/share/icons/Papirus/16x16/apps:/usr/share/icons/Papirus/16x16/panel
+
+[urgency_low]
+    background = "#24271e"
+    foreground = "#c8c9c6"
+    frame_color = "#73A3B8"
+    timeout = 5
+
+[urgency_normal]
+    background = "#24271e"
+    foreground = "#c8c9c6"
+    frame_color = "#77B0C5"
+    timeout = 10
+
+[urgency_critical]
+    background = "#24271e"
+    foreground = "#c8c9c6"
+    frame_color = "#8DAAB6"
+    timeout = 30

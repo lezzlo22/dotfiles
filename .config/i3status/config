@@ -1,0 +1,35 @@
+general {
+    colors = true
+    interval = 5
+}
+
+order += "cpu_usage"
+order += "memory"
+order += "disk /"
+order += "wireless _first_"
+order += "volume master"
+order += "battery 0"
+order += "tray_output"
+order += "tztime local"
+
+cpu_usage {
+    format = "CPU: %usage"
+}
+memory {
+    format = "RAM: %used"
+}
+volume master {
+    format = "🔊 %volume"
+    format_muted = "🔇 muted"
+    device = "default"
+    mixer = "Master"
+    mixer_idx = 0
+}
+wireless _first_ {
+    # format_up = "📶%quality %essid"
+    format_up = "📶%quality"
+    format_down = "No WiFi"
+}
+tztime local {
+    format = "%Y-%m-%d %H:%M"
+}

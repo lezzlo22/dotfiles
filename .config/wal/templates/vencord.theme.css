@@ -1,0 +1,84 @@
+/**
+ * @name Pywal
+ * @description Auto-generated from the current pywal colorscheme
+ * @author lezzlo
+ * @version 1.0.0
+ */
+
+:root {
+  --background-primary: {background};
+  --background-secondary: {background};
+  --background-secondary-alt: {color0};
+  --background-tertiary: {color0};
+  --background-accent: {color4};
+  --background-floating: {background};
+  --channeltextarea-background: {color0};
+  --text-normal: {foreground};
+  --text-muted: {color8};
+  --text-link: {color4};
+  --header-primary: {foreground};
+  --header-secondary: {color7};
+  --interactive-normal: {color7};
+  --interactive-hover: {foreground};
+  --interactive-active: {foreground};
+  --brand-experiment: {color4};
+  --status-online: {color2};
+  --status-idle: {color3};
+  --status-dnd: {color1};
+  --status-offline: {color8};
+}
+
+html, body, #app-mount {
+  background-color: {background} !important;
+}
+
+/* server (guild) list */
+[class*="guilds_"], [class*="wrapper_"][class*="guildsWrapper"] {
+  background-color: {color0} !important;
+}
+
+/* channel/category sidebar + DM list */
+nav[class*="sidebar_"], [class*="privateChannels_"] {
+  background-color: {background} !important;
+}
+
+/* main chat column */
+[class*="chat_"], [class*="chatContent_"], [class*="content_"] {
+  background-color: {background} !important;
+}
+
+/* member list panel */
+[class*="membersWrap_"], [class*="members_"] {
+  background-color: {background} !important;
+}
+
+/* message input box */
+[class*="channelTextArea_"], [class*="textArea_"] {
+  background-color: {color0} !important;
+}
+
+/* top bar / header */
+[class*="title_"], [class*="header_"] {
+  background-color: {background} !important;
+}
+
+/* popups / modals / context menus */
+[class*="modal_"], [class*="popout_"], [class*="menu_"] {
+  background-color: {color0} !important;
+}
+
+/* text colors */
+[class*="chatContent_"], [class*="messageContent_"], [class*="markup_"],
+[class*="title_"], [class*="header_"] {
+  color: {foreground} !important;
+}
+
+/* links / mentions / brand accents */
+a[class*="anchor_"], [class*="mention_"] {
+  color: {color4} !important;
+}
+
+/* scrollbars */
+[class*="scrollerBase_"]::-webkit-scrollbar-thumb {
+  background-color: {color8} !important;
+}

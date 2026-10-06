@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+time=$(date "+  %H:%M")
+
+# Print short text
+echo "$time"
+# Print full text (same here)
+echo "$time"
+# Print color (any hex)
+echo "#ffffff"  
+

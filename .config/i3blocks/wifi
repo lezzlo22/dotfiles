@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+COLOR_GE80="#00FF00"
+COLOR_GE60="#FFF600"
+COLOR_GE40="#FFAE00"
+COLOR_LOWR="#FF0000"
+COLOR_ETH="#00FFFF"
+COLOR_DOWN="#FF0000"
+
+INTERFACE=""
+# Prefer wireless, skip virtual interfaces (docker, veth, br-, lo)
+for iface in /sys/class/net/*/; do
+  name=$(basename "$iface")
+  [[ "$name" =~ ^(lo|docker[0-9]|veth|br-|virbr) ]] && continue
+  [[ -d "/sys/class/net/$name/wireless" ]] || continue
+  [[ "$(cat "$iface/operstate" 2>/dev/null)" == "up" ]] && INTERFACE="$name" && break
+done
+# Fall back to any real wired interface if no wireless found
+if [[ -z "$INTERFACE" ]]; then
+  for iface in /sys/class/net/*/; do
+    name=$(basename "$iface")
+    [[ "$name" =~ ^(lo|docker[0-9]|veth|br-|virbr) ]] && continue
+    [[ "$(cat "$iface/operstate" 2>/dev/null)" == "up" ]] && INTERFACE="$name" && break
+  done
+fi
+
+if [[ -z "$INTERFACE" ]]; then
+  echo "  disconnected"
+  echo "  disconnected"
+  echo $COLOR_DOWN
+  exit
+fi
+
+if [[ -d "/sys/class/net/$INTERFACE/wireless" ]]; then
+  QUALITY=$(iw dev "$INTERFACE" link | grep 'dBm$' | grep -Eoe '-[0-9]{2}' | awk '{print ($1 > -50 ? 100 : ($1 < -100 ? 0 : ($1+100)*2))}')
+  echo "  $QUALITY%"
+  echo "  $QUALITY%"
+  if [[ $QUALITY -ge 80 ]]; then
+    echo $COLOR_GE80
+  elif [[ $QUALITY -ge 60 ]]; then
+    echo $COLOR_GE60
+  elif [[ $QUALITY -ge 40 ]]; then
+    echo $COLOR_GE40
+  else
+    echo $COLOR_LOWR
+  fi
+else
+  echo "  ETH"
+  echo "  ETH"
+  echo $COLOR_ETH
+fi
