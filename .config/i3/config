@@ -24,6 +24,9 @@ font pango:monospace 16
 # https://wiki.archlinux.org/index.php/XDG_Autostart
 exec --no-startup-id dex --autostart --environment i3
 
+# Deskflow keyboard and mouse sharing
+exec --no-startup-id deskflow
+
 # The combination of xss-lock, nm-applet and pactl is a popular choice, so
 # they are included here as an example. Modify as you see fit.
 
@@ -46,6 +49,12 @@ exec --no-startup-id kdeconnectd
 # bridge StatusNotifier/AppIndicator tray icons into i3bar's XEmbed tray
 # must start before any SNI tray app (blueman-applet, limusic, ...)
 exec --no-startup-id snixembed --fork
+
+# iwd wifi tray GUI (started early so it docks left in the tray)
+exec --no-startup-id iwgtk -i
+
+# pulseaudio/pipewire volume tray (scroll=volume, click=pavucontrol)
+exec --no-startup-id pasystray
 
 # bluetooth tray + auto-reconnect/switch
 exec --no-startup-id blueman-applet

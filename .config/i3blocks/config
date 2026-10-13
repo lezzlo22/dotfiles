@@ -3,14 +3,16 @@ markup=pango
 separator=true
 separator_block_width=15
 
-[wifi]
-command=~/.config/i3blocks/wifi
-interval=60
+# replaced by iwgtk tray icon
+#[wifi]
+#command=~/.config/i3blocks/wifi
+#interval=60
 
-[volume]
-command=~/.config/i3blocks/volume
-interval=2
-signal=10
+# replaced by pasystray tray icon
+#[volume]
+#command=~/.config/i3blocks/volume
+#interval=2
+#signal=10
 
 [rofi-calendar]
 command=~/.config/i3blocks/rofi-calendar
