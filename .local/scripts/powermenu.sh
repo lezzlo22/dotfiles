@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 
-options=" Hibernate
- Poweroff
- Reboot
- Lock
- Logout"
+THEME="$HOME/.config/rofi-spotlight/spotlight.rasi"
+
+options="   Hibernate
+   Poweroff
+   Reboot
+   Lock
+   Logout"
 
 op=$(echo -e "$options" \
-    | rofi -dmenu -i -p "Power Menu" -theme-str 'window {width: 300px;}' \
+    | rofi -no-config -dmenu -i -p "Power" -theme "$THEME" \
+        -theme-str '* { font: "JetBrainsMono Nerd Font 13"; } window { width: 420px; } listview { lines: 5; } entry { placeholder: "Power menu"; }' \
     | awk '{print tolower($NF)}')
 
 case $op in
