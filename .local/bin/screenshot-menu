@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+save_dir="$HOME/Pictures/Screenshots"
+tmp_file=$(mktemp --suffix=.png)
+trap 'rm -f "$tmp_file"' EXIT
+
+notify-send 'Select an area for the screenshot' &
+scrot -s "$tmp_file" || exit 0
+
+choice=$(printf 'Copy to clipboard\nSave to Pictures\n' | rofi -dmenu -i -p 'Screenshot')
+
+case "$choice" in
+  'Copy to clipboard')
+    xclip -selection clipboard -t image/png -i "$tmp_file"
+    notify-send 'Screenshot copied to clipboard'
+    ;;
+  'Save to Pictures')
+    mkdir -p "$save_dir"
+    destination="$save_dir/$(date '+%Y-%m-%d_%H-%M-%S').png"
+    mv "$tmp_file" "$destination"
+    trap - EXIT
+    notify-send "Screenshot saved to $destination"
+    ;;
+esac

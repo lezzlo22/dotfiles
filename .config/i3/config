@@ -53,8 +53,8 @@ exec --no-startup-id snixembed --fork
 # iwd wifi tray GUI (started early so it docks left in the tray)
 exec --no-startup-id iwgtk -i
 
-# pulseaudio/pipewire volume tray (scroll=volume, click=pavucontrol)
-exec --no-startup-id pasystray
+# volume is handled by the i3blocks audio block
+# exec --no-startup-id pasystray
 
 # bluetooth tray + auto-reconnect/switch
 exec --no-startup-id blueman-applet
@@ -74,8 +74,18 @@ floating_modifier $mod
 # or left-clicking anywhere into the window while holding the floating modifier.
 tiling_drag modifier titlebar
 
-# screenshot
-bindsym $mod+Shift+p exec --no-startup-id i3-scrot --select-to-clipboard
+# screenshot: choose whether the selected area is copied or saved
+bindsym $mod+Shift+p exec --no-startup-id ~/.local/bin/screenshot-menu
+
+# Hardware media keys (PipeWire via PulseAudio compatibility + MPRIS players)
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +5%
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -5%
+bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle
+bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle
+bindsym XF86AudioPlay exec --no-startup-id playerctl play-pause
+bindsym XF86AudioStop exec --no-startup-id playerctl stop
+bindsym XF86AudioPrev exec --no-startup-id playerctl previous
+bindsym XF86AudioNext exec --no-startup-id playerctl next
 
 # start a terminal (alacritty default — XIM unset to dodge the fcitx5 new-window input-loss race)
 bindsym $mod+Return exec env XMODIFIERS= GTK_IM_MODULE= QT_IM_MODULE= alacritty
