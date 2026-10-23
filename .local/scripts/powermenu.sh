@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 THEME="$HOME/.config/rofi-spotlight/spotlight.rasi"
+COLORS="$HOME/.config/rofi-spotlight/colors-wal.rasi"
 
 options="   Hibernate
    Poweroff
@@ -8,10 +9,12 @@ options="   Hibernate
    Lock
    Logout"
 
-op=$(echo -e "$options" \
-    | rofi -no-config -dmenu -i -p "Power" -theme "$THEME" \
-        -theme-str '* { font: "JetBrainsMono Nerd Font 13"; } window { width: 420px; } listview { lines: 5; } entry { placeholder: "Power menu"; }' \
-    | awk '{print tolower($NF)}')
+set -- -no-config -dmenu -i -p "Power" -theme "$THEME" \
+    -theme-str '* { font: "JetBrainsMono Nerd Font 13"; } window { width: 420px; } listview { lines: 5; } entry { placeholder: "Power menu"; }'
+# same optional palette override as the launcher (pywal symlink / custom copy)
+[ -f "$COLORS" ] && set -- "$@" -theme-str "$(cat "$COLORS")"
+
+op=$(echo -e "$options" | rofi "$@" | awk '{print tolower($NF)}')
 
 case $op in
     poweroff|reboot|hibernate)
