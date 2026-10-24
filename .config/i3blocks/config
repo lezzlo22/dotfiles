@@ -3,16 +3,32 @@ markup=pango
 separator=true
 separator_block_width=15
 
+# >>> agent-usage >>>
+[claude_usage]
+command=/home/lezzlo/.local/bin/agent-usage-i3block claude
+interval=120
+separator=true
+separator_block_width=10
+
+[codex_usage]
+command=/home/lezzlo/.local/bin/agent-usage-i3block codex
+interval=120
+# <<< agent-usage <<<
+
 # replaced by iwgtk tray icon
 #[wifi]
 #command=~/.config/i3blocks/wifi
 #interval=60
 
-# replaced by pasystray tray icon
-#[volume]
-#command=~/.config/i3blocks/volume
-#interval=2
-#signal=10
+[mic]
+command=/home/lezzlo/.local/bin/i3-volume mic
+interval=2
+separator=true
+separator_block_width=6
+
+[volume]
+command=/home/lezzlo/.local/bin/i3-volume
+interval=2
 
 [rofi-calendar]
 command=~/.config/i3blocks/rofi-calendar
