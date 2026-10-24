@@ -1,0 +1,16 @@
+{
+  "accounts": [
+    {
+      "name": "Claude",
+      "type": "claude",
+      "token_file": "/home/USER/.claude/.credentials.json",
+      "token_jq": ".claudeAiOauth.accessToken"
+    },
+    {
+      "name": "Codex",
+      "type": "codex",
+      "auth_mode": "chatgpt",
+      "auth_file": "/home/USER/.codex/auth.json"
+    }
+  ]
+}
