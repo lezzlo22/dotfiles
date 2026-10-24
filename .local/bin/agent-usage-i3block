@@ -1,1 +1,155 @@
-/home/lezzlo/.local/share/agent-usage/bin/agent-usage-i3block
+#!/usr/bin/env bash
+# i3blocks blocklet: Claude + Codex usage, per-service color, with OAuth token refresh.
+# Originally based on felixbrock/i3-coding-agent-usage-tracker (MIT, (c) 2026 Felix
+# Brockmeier); heavily rewritten (token refresh, filter arg, native colors) and vendored.
+# Optional argument limits output to one service, so i3blocks can color it natively.
+set -euo pipefail
+
+CONFIG="${HOME}/.config/agent-usage/accounts.json"
+filter_type=${1:-}
+[[ -f "$CONFIG" ]] || exit 0
+command -v jq >/dev/null 2>&1 || exit 0
+command -v curl >/dev/null 2>&1 || exit 0
+
+count=$(jq '.accounts | length' "$CONFIG")
+[[ "$count" -eq 0 ]] && exit 0
+
+parts=()
+
+for ((i=0; i<count; i++)); do
+  account=$(jq -c ".accounts[$i]" "$CONFIG")
+  type=$(jq -r '.type' <<<"$account")
+  name=$(jq -r '.name' <<<"$account")
+  [[ -n "$filter_type" && "$type" != "$filter_type" ]] && continue
+
+  if [[ "$type" == "claude" ]]; then
+    token_file=$(jq -r '.token_file // empty' <<<"$account")
+    token_jq=$(jq -r '.token_jq // ".claudeAiOauth.accessToken"' <<<"$account")
+    token=""
+    if [[ -n "$token_file" && -f "$token_file" ]]; then
+      token=$(jq -r "$token_jq // empty" "$token_file" 2>/dev/null || true)
+    fi
+    [[ "$token" == "null" ]] && token=""
+    [[ -z "$token" ]] && continue
+
+    endpoint=$(jq -r '.endpoint // "https://api.anthropic.com/api/oauth/usage"' <<<"$account")
+    usage_curl() {
+      curl -fsS "$endpoint" \
+        -H "authorization: Bearer $1" \
+        -H "accept: application/json" \
+        -H "anthropic-beta: oauth-2025-04-20" 2>/dev/null
+    }
+    payload=$(usage_curl "$token") || payload=""
+
+    # Access token expires (~8h); refresh with the stored refresh token instead
+    # of waiting for `claude` to rewrite the file. ponytail: best-effort, single retry.
+    if [[ -z "$payload" ]]; then
+      refresh=$(jq -r '.claudeAiOauth.refreshToken // empty' "$token_file" 2>/dev/null || true)
+      client_id=$(jq -r '.claudeAiOauth.clientId // "9d1c250a-e61b-44d9-88ed-5944d1962f5e"' "$token_file" 2>/dev/null || true)
+      if [[ -n "$refresh" ]]; then
+        resp=$(curl -fsS "https://api.anthropic.com/v1/oauth/token" \
+          -H "content-type: application/json" \
+          -H "anthropic-beta: oauth-2025-04-20" \
+          -H "user-agent: claude-cli/1.0 (external)" \
+          -d "{\"grant_type\":\"refresh_token\",\"refresh_token\":\"$refresh\",\"client_id\":\"$client_id\"}" 2>/dev/null) || resp=""
+        new_token=$(jq -r '.access_token // empty' <<<"$resp" 2>/dev/null || true)
+        if [[ -n "$new_token" ]]; then
+          # Atomic write-back so a mid-write failure can't corrupt credentials.
+          tmp=$(mktemp "${token_file}.XXXXXX")
+          if jq --arg a "$new_token" \
+               --arg r "$(jq -r '.refresh_token // empty' <<<"$resp")" \
+               --argjson e "$(( $(date +%s%3N) + $(jq -r '.expires_in // 28800' <<<"$resp") * 1000 ))" \
+               '.claudeAiOauth.accessToken=$a
+                | (if $r != "" then .claudeAiOauth.refreshToken=$r else . end)
+                | .claudeAiOauth.expiresAt=$e' \
+               "$token_file" >"$tmp" 2>/dev/null; then
+            chmod --reference="$token_file" "$tmp" 2>/dev/null || chmod 600 "$tmp"
+            mv -f "$tmp" "$token_file"
+            token=$new_token
+          else
+            rm -f "$tmp"
+          fi
+          payload=$(usage_curl "$token") || payload=""
+        fi
+      fi
+    fi
+    [[ -z "$payload" ]] && { parts+=("${name} unavailable"); continue; }
+
+    used=$(jq -r '.five_hour.utilization // 0' <<<"$payload")
+    left=$(awk -v u="$used" 'BEGIN { v=100-u; if(v<0)v=0; printf "%.0f", v }')
+    parts+=("${name} ${left}%")
+
+  elif [[ "$type" == "codex" ]]; then
+    auth_mode=$(jq -r '.auth_mode // "api_key"' <<<"$account")
+
+    if [[ "$auth_mode" == "chatgpt" ]]; then
+      auth_file=$(jq -r '.auth_file // empty' <<<"$account")
+      [[ -z "$auth_file" || ! -f "$auth_file" ]] && continue
+
+      token=$(jq -r '.tokens.access_token // empty' "$auth_file" 2>/dev/null || true)
+      account_id=$(jq -r '.tokens.account_id // empty' "$auth_file" 2>/dev/null || true)
+      [[ -z "$token" ]] && continue
+
+      usage_curl() {
+        curl -fsS "https://chatgpt.com/backend-api/wham/usage" \
+          -H "Authorization: Bearer $1" \
+          -H "ChatGPT-Account-Id: $account_id" \
+          -H "User-Agent: codex-cli" \
+          -H "Accept: application/json" 2>/dev/null
+      }
+      payload=$(usage_curl "$token") || payload=""
+
+      # Same expiry story as claude: refresh with the stored refresh token rather
+      # than waiting for codex to rewrite auth.json. ponytail: best-effort, single retry.
+      if [[ -z "$payload" ]]; then
+        refresh=$(jq -r '.tokens.refresh_token // empty' "$auth_file" 2>/dev/null || true)
+        client_id=$(jq -r '.client_id // "app_EMoamEEZ73f0CkXaXp7hrann"' <<<"$account")
+        if [[ -n "$refresh" ]]; then
+          resp=$(curl -fsS "https://auth.openai.com/oauth/token" \
+            -H "content-type: application/json" \
+            -d "{\"grant_type\":\"refresh_token\",\"refresh_token\":\"$refresh\",\"client_id\":\"$client_id\"}" 2>/dev/null) || resp=""
+          new_token=$(jq -r '.access_token // empty' <<<"$resp" 2>/dev/null || true)
+          if [[ -n "$new_token" ]]; then
+            tmp=$(mktemp "${auth_file}.XXXXXX")
+            if jq --arg a "$new_token" \
+                 --arg i "$(jq -r '.id_token // empty' <<<"$resp")" \
+                 --arg r "$(jq -r '.refresh_token // empty' <<<"$resp")" \
+                 --arg ts "$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)" \
+                 '.tokens.access_token=$a
+                  | (if $i != "" then .tokens.id_token=$i else . end)
+                  | (if $r != "" then .tokens.refresh_token=$r else . end)
+                  | .last_refresh=$ts' \
+                 "$auth_file" >"$tmp" 2>/dev/null; then
+              chmod --reference="$auth_file" "$tmp" 2>/dev/null || chmod 600 "$tmp"
+              mv -f "$tmp" "$auth_file"
+              token=$new_token
+            else
+              rm -f "$tmp"
+            fi
+            payload=$(usage_curl "$token") || payload=""
+          fi
+        fi
+      fi
+      [[ -z "$payload" ]] && { parts+=("${name} unavailable"); continue; }
+
+      used=$(jq -r '.rate_limit.primary_window.used_percent // 0' <<<"$payload")
+      left=$(awk -v u="$used" 'BEGIN { v=100-u; if(v<0)v=0; printf "%.0f", v }')
+      parts+=("${name} ${left}%")
+    fi
+  fi
+done
+
+[[ ${#parts[@]} -eq 0 ]] && exit 0
+
+text=$(printf '%s' "${parts[0]}")
+for ((j=1; j<${#parts[@]}; j++)); do
+  text+=" | ${parts[j]}"
+done
+
+# i3blocks: line 1 = full_text, line 2 = short_text
+echo "$text"
+echo "$text"
+case "$filter_type" in
+  claude) echo '#D97757' ;;
+  codex) echo '#ffffff' ;;
+esac
