@@ -15,6 +15,14 @@ configuration entries.
 |#
 
 (defcfg
+  ;; Leave the XING WEI receiver untouched: it supplies this PC's media keys
+  ;; and its reconnects must not pass through Kanata's virtual keyboard.
+  linux-dev-names-exclude (
+    "XING WEI 2.4G USB USB Composite Device"
+    "XING WEI 2.4G USB USB Composite Device Consumer Control"
+    "XING WEI 2.4G USB USB Composite Device System Control"
+  )
+
   #|
   This configuration will process all keys pressed inside of kanata, even if
   they are not mapped in defsrc. This is so that certain actions can activate
