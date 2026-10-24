@@ -8,7 +8,7 @@ FONT="${FONT:-Monospace 10}"
 LEFTCLICK_PREV_MONTH=${LEFTCLICK_PREV_MONTH:-false}
 PREV_MONTH_TEXT="${PREV_MONTH_TEXT:-« previous month «}"
 NEXT_MONTH_TEXT="${NEXT_MONTH_TEXT:-» next month »}"
-ROFI_CONFIG_FILE="${ROFI_CONFIG_FILE:-/dev/null}"
+ROFI_CONFIG_FILE="${ROFI_CONFIG_FILE:-$HOME/.config/rofi/config.rasi}"
 BAR_POSITION="${BAR_POSITION:-bottom}"
 WEEK_START="${WEEK_START:-monday}"
 ###### Variables ######

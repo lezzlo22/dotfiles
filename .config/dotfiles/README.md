@@ -36,6 +36,22 @@ dotfiles checkout        # may warn about existing files; back them up and retry
 dotfiles config status.showUntrackedFiles no
 ```
 
+After checkout, two things aren't tracked here and need setting up:
+
+```sh
+# App launcher ($mod+d) — my own repo, cloned in place
+git clone git@github.com:lezzlo22/rofi-spotlight.git ~/.config/rofi-spotlight
+
+# Claude/Codex usage i3blocks (the blocklet itself IS tracked at
+# ~/.local/bin/agent-usage-i3block; it just needs its account config):
+cp ~/.config/agent-usage/accounts.json.example ~/.config/agent-usage/accounts.json
+sed -i "s|/home/USER|$HOME|g" ~/.config/agent-usage/accounts.json
+```
+
+`agent-usage-i3block` was originally felixbrock's `i3-coding-agent-usage-tracker`
+(MIT), but it's been rewritten enough (OAuth token refresh, per-service colors) that
+it's vendored as a plain script — no external repo to clone.
+
 ## Gotchas / decisions (why things are the way they are)
 
 - **Tray icons (snixembed):** i3bar's tray only speaks the old XEmbed protocol;

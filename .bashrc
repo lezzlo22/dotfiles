@@ -12,7 +12,7 @@ PS1='[\u@\h \W]\$ '
 export QT_QPA_PLATFORMTHEME=qt5ct
 
 # Created by `pipx` on 2025-11-11 15:52:53
-export PATH="$PATH:/home/lezzlo/.local/bin"
+export PATH="$PATH:$HOME/.local/bin"
 
 # Import colorscheme from 'wal' asynchronously
 # &   # Run the process in the background.
@@ -38,7 +38,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
 
 # pnpm
-export PNPM_HOME="/home/lezzlo/.local/share/pnpm"
+export PNPM_HOME="$HOME/.local/share/pnpm"
 case ":$PATH:" in
 *":$PNPM_HOME:"*) ;;
 *) export PATH="$PNPM_HOME:$PATH" ;;

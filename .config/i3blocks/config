@@ -5,13 +5,13 @@ separator_block_width=15
 
 # >>> agent-usage >>>
 [claude_usage]
-command=/home/lezzlo/.local/bin/agent-usage-i3block claude
+command=~/.local/bin/agent-usage-i3block claude
 interval=120
 separator=true
 separator_block_width=10
 
 [codex_usage]
-command=/home/lezzlo/.local/bin/agent-usage-i3block codex
+command=~/.local/bin/agent-usage-i3block codex
 interval=120
 # <<< agent-usage <<<
 
@@ -21,20 +21,19 @@ interval=120
 #interval=60
 
 [mic]
-command=/home/lezzlo/.local/bin/i3-volume mic
+command=~/.local/bin/i3-volume mic
 interval=2
 separator=true
 separator_block_width=6
 
 [volume]
-command=/home/lezzlo/.local/bin/i3-volume
+command=~/.local/bin/i3-volume
 interval=2
 
 [rofi-calendar]
 command=~/.config/i3blocks/rofi-calendar
 interval=3600
 BAR_POSITION=top
-ROFI_CONFIG_FILE=/home/lezzlo/.config/rofi/config.rasi
 
 [time]
 command=~/.config/i3blocks/time

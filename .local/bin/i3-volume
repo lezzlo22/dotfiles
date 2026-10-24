@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+step=5
+mode=${1:-output}
+
+rofi_menu() {
+  rofi -dmenu -i -m -3 \
+    -theme "$HOME/.config/rofi/config.rasi" \
+    -theme-str 'window { width: 24em; padding: 0.5em; } inputbar { enabled: false; } listview { fixed-height: false; }' \
+    "$@"
+}
+
+default_sink() {
+  pactl get-default-sink
+}
+
+default_source() {
+  pactl get-default-source
+}
+
+move_playback_to() {
+  local sink=$1 id
+  while read -r id; do
+    [[ -n "$id" ]] && pactl move-sink-input "$id" "$sink"
+  done < <(pactl list short sink-inputs | awk '{print $1}')
+}
+
+choose_sink() {
+  local current name description label selected
+  local -a labels=() names=()
+  current=$(default_sink)
+
+  while IFS=$'\t' read -r name description; do
+    label="$description"
+    [[ "$name" == "$current" ]] && label="✓ $label"
+    labels+=("$label")
+    names+=("$name")
+  done < <(pactl -f json list sinks | jq -r '.[] | [.name, (.description // .name)] | @tsv')
+
+  selected=$(printf '%s\n' "${labels[@]}" | rofi_menu -p 'Output device') || return 0
+  for i in "${!labels[@]}"; do
+    if [[ "${labels[$i]}" == "$selected" ]]; then
+      pactl set-default-sink "${names[$i]}"
+      move_playback_to "${names[$i]}"
+      return
+    fi
+  done
+}
+
+move_capture_to() {
+  local source=$1 id
+  while read -r id; do
+    [[ -n "$id" ]] && pactl move-source-output "$id" "$source"
+  done < <(pactl list short source-outputs | awk '{print $1}')
+}
+
+choose_source() {
+  local current name description label selected
+  local -a labels=() names=()
+  current=$(default_source)
+
+  while IFS=$'\t' read -r name description; do
+    label="$description"
+    [[ "$name" == "$current" ]] && label="✓ $label"
+    labels+=("$label")
+    names+=("$name")
+  done < <(pactl -f json list sources | jq -r '.[] | select(.name | endswith(".monitor") | not) | [.name, (.description // .name)] | @tsv')
+
+  selected=$(printf '%s\n' "${labels[@]}" | rofi_menu -p 'Input device') || return 0
+  for i in "${!labels[@]}"; do
+    if [[ "${labels[$i]}" == "$selected" ]]; then
+      pactl set-default-source "${names[$i]}"
+      move_capture_to "${names[$i]}"
+      return
+    fi
+  done
+}
+
+mic_in_use() {
+  pactl list short source-outputs 2>/dev/null | grep -q .
+}
+
+if [[ "$mode" == mic ]]; then
+  case "${BLOCK_BUTTON:-}" in
+    1) choose_source ;;
+    2) pactl set-source-mute @DEFAULT_SOURCE@ toggle ;;
+    3) pavucontrol >/dev/null 2>&1 & ;;
+    4) pactl set-source-volume @DEFAULT_SOURCE@ "+${step}%" ;;
+    5) pactl set-source-volume @DEFAULT_SOURCE@ "-${step}%" ;;
+  esac
+
+  if ! source=$(default_source 2>/dev/null); then
+    printf ' unavailable\n'
+    exit 0
+  fi
+  volume=$(pactl get-source-volume "$source" | grep -oE '[0-9]+%' | head -n1 | tr -d '%' || true)
+  muted=$(pactl get-source-mute "$source" | awk '{print $2}')
+  volume=${volume:-0}
+  if [[ "$muted" == yes ]]; then
+    printf ' %s%%\n %s%%\n#a0a0a0\n' "$volume" "$volume"
+  elif mic_in_use; then
+    printf ' %s%%\n %s%%\n#ffffff\n' "$volume" "$volume"
+  else
+    printf ' %s%%\n %s%%\n#a0a0a0\n' "$volume" "$volume"
+  fi
+  exit 0
+fi
+
+case "${BLOCK_BUTTON:-}" in
+  1) choose_sink ;;
+  2) pactl set-sink-mute @DEFAULT_SINK@ toggle ;;
+  3) pavucontrol >/dev/null 2>&1 & ;;
+  4) pactl set-sink-volume @DEFAULT_SINK@ "+${step}%" ;;
+  5) pactl set-sink-volume @DEFAULT_SINK@ "-${step}%" ;;
+esac
+
+if ! sink=$(default_sink 2>/dev/null); then
+  printf ' unavailable\n'
+  exit 0
+fi
+
+volume=$(pactl get-sink-volume "$sink" | grep -oE '[0-9]+%' | head -n1 | tr -d '%' || true)
+muted=$(pactl get-sink-mute "$sink" | awk '{print $2}')
+volume=${volume:-0}
+
+if [[ "$muted" == yes ]]; then
+  text=" muted"
+  color='#a0a0a0'
+elif (( volume > 50 )); then
+  text=" ${volume}%"
+  color='#ffffff'
+else
+  text=" ${volume}%"
+  color='#ffffff'
+fi
+
+printf '%s\n%s\n%s\n' "$text" "$text" "$color"
